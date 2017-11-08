@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.youthlive.youthlive">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:name=".bean"
+        android:theme="@style/AppTheme">
+        <activity android:name=".Screen1" />
+        <activity android:name=".Login">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <meta-data
+            android:name="com.facebook.sdk.ApplicationId"
+            android:value="@string/facebook_app_id" />
+
+        <activity android:name=".Register" />
+        <activity android:name=".Signin" />
+        <activity android:name=".OTP" />
+        <activity android:name=".MainActivity" />
+        <activity android:name=".GoLive" />
+        <activity android:name=".LiveScreen" />
+        <activity android:name=".Activitys.CommentS" />
+        <activity android:name=".Activitys.MessaageActivity" />
+        <activity android:name=".Activitys.UsershowMessage" />
+        <activity android:name=".Activitys.FollowingActivity" />
+        <activity android:name=".Activitys.RattingActivity" />
+        <activity android:name=".Activitys.CreatePassword" />
+        <activity android:name=".Activitys.UserInformation" />
+        <activity
+            android:name="com.facebook.FacebookActivity"
+            android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
+            android:label="@string/app_name" />
+        <activity android:name=".Activitys.PersonalInfo" />
+        <activity android:name=".Activitys.MyVlog" />
+        <activity android:name=".Activitys.Videocomment_Activity"></activity>
+    </application>
+
+</manifest>
