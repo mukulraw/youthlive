@@ -163,7 +163,7 @@ public class Signin extends AppCompatActivity {
 
 
                         Intent Inbt = new Intent(Signin.this, MainActivity.class);
-                        Inbt.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                        Inbt.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK|Intent.FLAG_ACTIVITY_NEW_TASK);
                         startActivity(Inbt);
                         SharedPreferences sharedpreferences = Signin.this.getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
                         SharedPreferences.Editor editor = sharedpreferences.edit();
