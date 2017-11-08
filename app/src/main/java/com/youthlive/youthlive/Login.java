@@ -1,5 +1,6 @@
 package com.youthlive.youthlive;
 
+import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -10,6 +11,9 @@ import android.content.pm.Signature;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
+import android.os.Build;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Base64;
@@ -30,6 +34,8 @@ import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
 import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
+import com.nostra13.universalimageloader.core.ImageLoader;
+import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
 import com.youthlive.youthlive.DBHandler.SessionManager;
 
 import org.json.JSONObject;
@@ -55,6 +61,22 @@ public class Login extends AppCompatActivity {
     private ProgressDialog pDialog;
     String msg, loginid;
     SessionManager session;
+
+    String[] PERMISSIONS = {
+            Manifest.permission.SEND_SMS,
+            Manifest.permission.READ_SMS,
+            Manifest.permission.RECEIVE_SMS,
+            Manifest.permission.READ_PHONE_STATE,
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.WAKE_LOCK,
+            Manifest.permission.ACCESS_NETWORK_STATE,
+            Manifest.permission.CAMERA
+    };
+
+
+    final private int REQUEST_CODE_ASK_PERMISSIONS = 123;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,6 +131,16 @@ public class Login extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+
+        ImageLoader.getInstance().init(ImageLoaderConfiguration.createDefault(Login.this));
+
+
+        if(!hasPermissions(this , PERMISSIONS))
+        {
+            ActivityCompat.requestPermissions(this , PERMISSIONS , REQUEST_CODE_ASK_PERMISSIONS);
+        }
+
+
         LoginManager.getInstance().logOut();
         try {
             getUserinfo();
@@ -240,6 +272,11 @@ public class Login extends AppCompatActivity {
             return null;
         }
 
+
+
+
+
+
         @Override
         protected void onPostExecute(Void result) {
             super.onPostExecute(result);
@@ -255,6 +292,65 @@ public class Login extends AppCompatActivity {
 
         }
     }
+
+    public static boolean hasPermissions(Context context, String... permissions) {
+        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && context != null && permissions != null) {
+            for (String permission : permissions) {
+                if (ActivityCompat.checkSelfPermission(context, permission) != PackageManager.PERMISSION_GRANTED) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == REQUEST_CODE_ASK_PERMISSIONS)
+        {
+            if (
+                    ActivityCompat.checkSelfPermission(getApplicationContext() , Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
+                            ActivityCompat.checkSelfPermission(getApplicationContext() , Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED &&
+                            ActivityCompat.checkSelfPermission(getApplicationContext() , Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED &&
+                            ActivityCompat.checkSelfPermission(getApplicationContext() , Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED &&
+                            ActivityCompat.checkSelfPermission(getApplicationContext() , Manifest.permission.WAKE_LOCK) == PackageManager.PERMISSION_GRANTED
+                    )
+            {
+
+
+
+            }
+            else
+            {
+                if (
+                        ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE) ||
+                                ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA) ||
+                                ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.SEND_SMS) ||
+                                ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.RECORD_AUDIO) ||
+                                ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.WAKE_LOCK)
+                        ) {
+
+                    Toast.makeText(getApplicationContext(), "Permissions are required for this app", Toast.LENGTH_SHORT).show();
+                    finish();
+
+                }
+                //permission is denied (and never ask again is  checked)
+                //shouldShowRequestPermissionRationale will return false
+                else {
+                    Toast.makeText(this, "Go to settings and enable permissions", Toast.LENGTH_LONG)
+                            .show();
+                    finish();
+                    //                            //proceed with logic by disabling the related features or quit the app.
+                }
+            }
+        }
+
+
+    }
+
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {

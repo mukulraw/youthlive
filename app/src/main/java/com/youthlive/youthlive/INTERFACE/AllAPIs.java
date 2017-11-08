@@ -1,9 +1,12 @@
 package com.youthlive.youthlive.INTERFACE;
 
 
+import com.youthlive.youthlive.getLivePOJO.getLiveBean;
 import com.youthlive.youthlive.loginResponsePOJO.loginResponseBean;
 
 import retrofit2.Call;
+import retrofit2.http.GET;
+import retrofit2.http.Headers;
 import retrofit2.http.Multipart;
 import retrofit2.http.POST;
 import retrofit2.http.Part;
@@ -26,6 +29,12 @@ public interface AllAPIs {
             @Part("password") String password
     );
 
-
+    @Headers({
+            "Accept: application/vnd.bambuser.v1+json",
+            "Content-Type: application/json",
+            "Authorization: Bearer 374rnkqn332isfldjc8a3oki8"
+    })
+    @GET("broadcasts")
+    Call<getLiveBean> getLiveList();
 
 }

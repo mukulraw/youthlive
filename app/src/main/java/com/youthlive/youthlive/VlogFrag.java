@@ -117,8 +117,8 @@ public class VlogFrag extends Fragment {
         return view;
     }
     public void refine() {
-        videoadapter = new GridVideoadapter(getContext(),video);
-        grid.setAdapter(videoadapter);
+        //videoadapter = new GridVideoadapter(getContext(),video);
+        //grid.setAdapter(videoadapter);
     }
     public void Likevideo() {
         StringRequest stringRequest = new StringRequest(Request.Method.POST, URL, new Response.Listener<String>() {

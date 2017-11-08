@@ -12,13 +12,16 @@
         android:layout_width="match_parent"
         android:layout_height="150dp"
         android:id="@+id/relative"
-        android:background="#D3D3D3">
+        android:background="#D3D3D3"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true">
 
         <ImageView
             android:layout_width="match_parent"
             android:layout_height="150dp"
             android:layout_margin="2dp"
             android:scaleType="centerCrop"
+            android:id="@+id/image"
             android:fitsSystemWindows="false"
             app:srcCompat="@drawable/hot" />
 
@@ -38,6 +41,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:padding="5dp"
+            android:id="@+id/title"
             android:text="Jennifer Lawrence"
             android:textColor="#ffffff"
             android:textSize="14sp"

@@ -8,28 +8,33 @@ import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
-import com.bambuser.broadcaster.BroadcastStatus;
-import com.bambuser.broadcaster.Broadcaster;
-import com.bambuser.broadcaster.CameraError;
-import com.bambuser.broadcaster.ConnectionError;
+import com.bambuser.broadcaster.BroadcastPlayer;
+import com.bambuser.broadcaster.PlayerState;
 import com.yasic.bubbleview.BubbleView;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 
-public class LiveScreen extends AppCompatActivity {
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
+public class PlayerActivity extends AppCompatActivity {
 
     RecyclerView grid;
     RecyclerView grid2;
@@ -41,31 +46,24 @@ public class LiveScreen extends AppCompatActivity {
     private BubbleView bubbleView;
     ImageButton close;
 
-    Broadcaster mBroadcaster;
-    SurfaceView mPreviewSurface;
-    private static final String APPLICATION_ID = "9Nl68X4uVmi5mu5REY3SxA";
+    SurfaceView mVideoSurface;
+    BroadcastPlayer mBroadcastPlayer;
+    //TextView mPlayerStatusTextView;
+    final OkHttpClient mOkHttpClient = new OkHttpClient();
 
+    String uri;
+
+    private static final String APPLICATION_ID = "9Nl68X4uVmi5mu5REY3SxA";
+    private static final String API_KEY = "374rnkqn332isfldjc8a3oki8";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_live_screen);
+        setContentView(R.layout.activity_player);
 
+        uri = getIntent().getStringExtra("uri");
 
-        mPreviewSurface = (SurfaceView) findViewById(R.id.PreviewSurfaceView);
-
-        mBroadcaster = new Broadcaster(this, APPLICATION_ID, mBroadcasterObserver);
-        mBroadcaster.setRotation(getWindowManager().getDefaultDisplay().getRotation());
-        mBroadcaster.setTitle(getIntent().getStringExtra("title"));
-        bean b = (bean)getApplicationContext();
-
-        mBroadcaster.setAuthor(b.userImage);
-        mBroadcaster.setSendPosition(true);
-
-
-        mBroadcaster.setCustomData(b.userId);
-        mBroadcaster.setSaveOnServer(false);
-
+        mVideoSurface = (SurfaceView) findViewById(R.id.PreviewSurfaceView);
 
         grid = (RecyclerView)findViewById(R.id.grid);
         grid2 = (RecyclerView)findViewById(R.id.grid2);
@@ -76,18 +74,18 @@ public class LiveScreen extends AppCompatActivity {
         close.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mBroadcaster.stopBroadcast();
+                //mBroadcaster.stopBroadcast();
                 finish();
             }
         });
-        /*heart.setOnClickListener(new View.OnClickListener() {
+        heart.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
                 bubbleView.startAnimation(bubbleView.getWidth(), bubbleView.getHeight());
 
             }
-        });*/
+        });
 
         adapter = new LiveAdapter(this);
         adapter2 = new LiveAdapter2(this);
@@ -115,28 +113,47 @@ public class LiveScreen extends AppCompatActivity {
 
 
 
+    }
 
-/*
+    BroadcastPlayer.Observer mBroadcastPlayerObserver = new BroadcastPlayer.Observer() {
+        @Override
+        public void onStateChange(PlayerState playerState) {
+            Toast.makeText(PlayerActivity.this , playerState.toString() , Toast.LENGTH_SHORT).show();
+        }
+        @Override
+        public void onBroadcastLoaded(boolean live, int width, int height) {
+        }
+    };
 
-        Timer t = new Timer();
-        t.schedule(new TimerTask() {
-            @Override
-            public void run() {
-*/
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mOkHttpClient.dispatcher().cancelAll();
+        mVideoSurface = null;
+        if (mBroadcastPlayer != null)
+            mBroadcastPlayer.close();
+        mBroadcastPlayer = null;
+    }
 
-                if (mBroadcaster.canStartBroadcasting())
-                    mBroadcaster.startBroadcast();
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mVideoSurface = (SurfaceView) findViewById(R.id.PreviewSurfaceView);
+        //mPlayerStatusTextView.setText("Loading latest broadcast");
+        //getLatestResourceUri();
 
-/*
-            }
-        } , 3000);
-*/
-
+        initPlayer(uri);
 
     }
 
     public void BlockPersson(View view) {
         PersonBlock();
+    }
+    private  void PersonBlock(){
+        final Dialog dialog = new Dialog(PlayerActivity.this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.blockpersom_dialog);
+        dialog.show();
     }
 
     public class LiveAdapter extends RecyclerView.Adapter<LiveAdapter.ViewHolder>
@@ -217,70 +234,61 @@ public class LiveScreen extends AppCompatActivity {
             }
         }
     }
-    private  void PersonBlock(){
-        final Dialog dialog = new Dialog(LiveScreen.this);
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.setContentView(R.layout.blockpersom_dialog);
-        dialog.show();
+
+    /*void getLatestResourceUri() {
+        Request request = new Request.Builder()
+                .url("https://api.irisplatform.io/broadcasts")
+                .addHeader("Accept", "application/vnd.bambuser.v1+json")
+                .addHeader("Content-Type", "application/json")
+                .addHeader("Authorization", "Bearer " + API_KEY)
+                .get()
+                .build();
+        mOkHttpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(final Call call, final IOException e) {
+                runOnUiThread(new Runnable() { @Override public void run() {
+                    if (mPlayerStatusTextView != null)
+                        mPlayerStatusTextView.setText("Http exception: " + e);
+                }});
+            }
+            @Override
+            public void onResponse(final Call call, final Response response) throws IOException {
+                String body = response.body().string();
+                String resourceUri = null;
+                try {
+                    JSONObject json = new JSONObject(body);
+                    JSONArray results = json.getJSONArray("results");
+                    JSONObject latestBroadcast = results.optJSONObject(0);
+                    resourceUri = latestBroadcast.optString("resourceUri");
+                } catch (Exception ignored) {}
+                final String uri = resourceUri;
+                runOnUiThread(new Runnable() { @Override public void run() {
+                    initPlayer(uri);
+                }});
+            }
+        });
+    }*/
+
+    void initPlayer(String resourceUri) {
+        if (resourceUri == null) {
+            //if (mPlayerStatusTextView != null)
+             //   mPlayerStatusTextView.setText("Could not get info about latest broadcast");
+            return;
+        }
+        if (mVideoSurface == null) {
+            // UI no longer active
+            return;
+        }
+
+        if (mBroadcastPlayer != null)
+            mBroadcastPlayer.close();
+        mBroadcastPlayer = new BroadcastPlayer(this, resourceUri, APPLICATION_ID, mBroadcastPlayerObserver);
+        mBroadcastPlayer.setSurfaceView(mVideoSurface);
+        mBroadcastPlayer.load();
+
     }
 
 
-    private Broadcaster.Observer mBroadcasterObserver = new Broadcaster.Observer() {
-        @Override
-        public void onConnectionStatusChange(BroadcastStatus broadcastStatus) {
-
-            if (broadcastStatus == BroadcastStatus.STARTING)
-                getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-            if (broadcastStatus == BroadcastStatus.IDLE)
-                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
-            //mBroadcastButton.setText(broadcastStatus == BroadcastStatus.IDLE ? "Broadcast" : "Disconnect");
-            //Log.i("Mybroadcastingapp", "Received status change: " + broadcastStatus);
-
-        }
-        @Override
-        public void onStreamHealthUpdate(int i) {
-        }
-        @Override
-        public void onConnectionError(ConnectionError connectionError, String s) {
-            Log.w("Mybroadcastingapp", "Received connection error: " + connectionError + ", " + s);
-        }
-        @Override
-        public void onCameraError(CameraError cameraError) {
-        }
-        @Override
-        public void onChatMessage(String s) {
-        }
-        @Override
-        public void onResolutionsScanned() {
-        }
-        @Override
-        public void onCameraPreviewStateChanged() {
-        }
-        @Override
-        public void onBroadcastInfoAvailable(String s, String s1) {
-        }
-        @Override
-        public void onBroadcastIdAvailable(String s) {
-        }
-    };
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        mBroadcaster.onActivityDestroy();
-    }
-    @Override
-    public void onPause() {
-        super.onPause();
-        mBroadcaster.onActivityPause();
-    }
-    @Override
-    public void onResume() {
-        super.onResume();
-        mBroadcaster.setCameraSurface(mPreviewSurface);
-        mBroadcaster.onActivityResume();
-    }
 
 
 }

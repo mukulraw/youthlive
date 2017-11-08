@@ -5,12 +5,14 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 
 public class GoLive extends AppCompatActivity {
 
     Button goLive;
     ImageButton close;
+    EditText title;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -19,6 +21,8 @@ public class GoLive extends AppCompatActivity {
 
         goLive = (Button)findViewById(R.id.golive);
         close = (ImageButton)findViewById(R.id.close);
+
+        title = (EditText)findViewById(R.id.title);
 
 
         close.setOnClickListener(new View.OnClickListener() {
@@ -34,6 +38,7 @@ public class GoLive extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(GoLive.this , LiveScreen.class);
+                intent.putExtra("title" , title.getText().toString());
                 startActivity(intent);
 
             }

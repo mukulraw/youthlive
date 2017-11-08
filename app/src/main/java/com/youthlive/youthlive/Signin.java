@@ -132,7 +132,7 @@ public class Signin extends AppCompatActivity {
 
                 progress.setVisibility(View.VISIBLE);
 
-                bean b = (bean) getApplicationContext();
+                final bean b = (bean) getApplicationContext();
 
                 final Retrofit retrofit = new Retrofit.Builder()
                         .baseUrl(b.BASE_URL)
@@ -151,7 +151,19 @@ public class Signin extends AppCompatActivity {
 
                         Toast.makeText(Signin.this , response.body().getMessage() , Toast.LENGTH_SHORT).show();
 
+                        b.userId = response.body().getData().getUserId();
+                        b.userName = response.body().getData().getUserName();
+
+                        try {
+                            b.userImage = response.body().getData().getUserImage();
+                        }catch (Exception e)
+                        {
+                            e.printStackTrace();
+                        }
+
+
                         Intent Inbt = new Intent(Signin.this, MainActivity.class);
+                        Inbt.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                         startActivity(Inbt);
                         SharedPreferences sharedpreferences = Signin.this.getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
                         SharedPreferences.Editor editor = sharedpreferences.edit();

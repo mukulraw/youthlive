@@ -53,6 +53,7 @@
                     android:layout_marginStart="20dp"
                     android:layout_marginEnd="20dp"
                     android:textColor="#FFF"
+                    android:id="@+id/title"
                     android:hint="Add a relevant title for your broadcvast"
                     android:gravity="center_horizontal"
                     android:textColorHint="#ffffff"
