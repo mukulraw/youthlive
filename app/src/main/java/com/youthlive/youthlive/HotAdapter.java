@@ -66,6 +66,7 @@ public class HotAdapter extends RecyclerView.Adapter<HotAdapter.MyViewHolder> {
 
                 Intent intent = new Intent(context , SingleVideoActivity.class);
                 intent.putExtra("videoId" , item.getVideoId());
+                intent.putExtra("url" , item.getVideoURL());
                 context.startActivity(intent);
 
             }

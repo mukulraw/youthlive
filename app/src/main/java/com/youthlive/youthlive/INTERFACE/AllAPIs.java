@@ -53,6 +53,13 @@ public interface AllAPIs {
     );
 
     @Multipart
+    @POST("youthlive/api/video_likes.php")
+    Call<singleVideoBean> likeVideo(
+            @Part("userId") String userId,
+            @Part("videoId") String videoId
+    );
+
+    @Multipart
     @POST("youthlive/api/video_comment.php")
     Call<vlogListBean> comment(
             @Part("userId") String userId,
