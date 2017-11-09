@@ -26,7 +26,7 @@ public class Screen3 extends Fragment {
         View view = inflater.inflate(R.layout.screen3 , container , false);
         layout = (TabLayout) view.findViewById(R.id.tab);
         pager = (ViewPager)view .findViewById(R.id.pager);
-        adapter = new HotAdapter(getContext());
+        //adapter = new HotAdapter(getContext());
         layout.addTab(layout.newTab().setText("Hot Vlog"));
         layout.addTab(layout.newTab().setText("Nearby"));
 

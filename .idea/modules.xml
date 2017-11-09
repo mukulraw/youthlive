@@ -3,10 +3,10 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
       <module fileurl="file://$PROJECT_DIR$/libbambuser-0.9.12/libbambuser-0.9.12.iml" filepath="$PROJECT_DIR$/libbambuser-0.9.12/libbambuser-0.9.12.iml" />
+      <module fileurl="file://D:\AndroidStudioProjects\YouthLive\youthlive\td\libbambuser-0.9.12\libbambuser-0.9.12.iml" filepath="D:\AndroidStudioProjects\YouthLive\youthlive\td\libbambuser-0.9.12\libbambuser-0.9.12.iml" />
       <module fileurl="file://$PROJECT_DIR$/td.iml" filepath="$PROJECT_DIR$/td.iml" />
-      <module fileurl="file://$PROJECT_DIR$/youthlive.iml" filepath="$PROJECT_DIR$/youthlive.iml" />
+      <module fileurl="file://D:\AndroidStudioProjects\YouthLive\youthlive\td\youthlive.iml" filepath="D:\AndroidStudioProjects\YouthLive\youthlive\td\youthlive.iml" />
     </modules>
   </component>
 </project>

@@ -29,8 +29,8 @@ public class Vlog extends Fragment{
 
         FragmentPagerItemAdapter adapter = new FragmentPagerItemAdapter(
                 getChildFragmentManager(), FragmentPagerItems.with(getContext())
-                .add("Hot", VlogFrag.class)
-                .add("Nearby", VlogFrag.class)
+                .add("Hot", HotVolg.class)
+                .add("Nearby", HotVolg.class)
                 .create());
 
         ViewPager viewPager = (ViewPager) view.findViewById(R.id.viewpager);

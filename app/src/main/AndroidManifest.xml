@@ -72,8 +72,9 @@
         <activity android:name=".Activitys.PersonalInfo" />
         <activity android:name=".Activitys.MyVlog" />
         <activity android:name=".Activitys.Videocomment_Activity" />
-        <activity android:name=".CameraActivity"></activity>
-        <activity android:name=".PlayerActivity"></activity>
+        <activity android:name=".CameraActivity" />
+        <activity android:name=".PlayerActivity" />
+        <activity android:name=".SingleVideoActivity"></activity>
     </application>
 
 </manifest>

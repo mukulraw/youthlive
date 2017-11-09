@@ -3,6 +3,8 @@ package com.youthlive.youthlive.INTERFACE;
 
 import com.youthlive.youthlive.getLivePOJO.getLiveBean;
 import com.youthlive.youthlive.loginResponsePOJO.loginResponseBean;
+import com.youthlive.youthlive.singleVideoPOJO.singleVideoBean;
+import com.youthlive.youthlive.vlogListPOJO.vlogListBean;
 
 import retrofit2.Call;
 import retrofit2.http.GET;
@@ -36,5 +38,26 @@ public interface AllAPIs {
     })
     @GET("broadcasts")
     Call<getLiveBean> getLiveList();
+
+    @Multipart
+    @POST("youthlive/api/get_video.php")
+    Call<vlogListBean> getVlogList(
+            @Part("userId") String userId
+    );
+
+    @Multipart
+    @POST("youthlive/api/get_single_video.php")
+    Call<singleVideoBean> getsingleVideo(
+            @Part("userId") String userId,
+            @Part("videoId") String videoId
+    );
+
+    @Multipart
+    @POST("youthlive/api/video_comment.php")
+    Call<vlogListBean> comment(
+            @Part("userId") String userId,
+            @Part("videoId") String videoId,
+            @Part("comment") String comment
+    );
 
 }

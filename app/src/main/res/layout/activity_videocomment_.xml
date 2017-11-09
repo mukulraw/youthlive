@@ -119,13 +119,16 @@
         </LinearLayout>
     </LinearLayout>
 
+
     <ListView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/comentlist"
         android:layout_above="@+id/commentbox_layout"
         android:layout_below="@+id/comment_layout"
-        android:layout_marginTop="10dp"></ListView>
+        android:layout_marginTop="10dp"
+        />
+
 
     <LinearLayout
         android:id="@+id/commentbox_layout"

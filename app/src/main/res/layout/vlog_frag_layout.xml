@@ -10,4 +10,5 @@
         android:numColumns="auto_fit"
         android:columnWidth="100dp">
     </GridView>
+
 </LinearLayout>
