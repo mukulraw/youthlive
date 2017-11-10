@@ -40,7 +40,7 @@
             android:padding="10dp"
             android:layout_marginStart="30dp"
             android:layout_marginEnd="30dp"
-            android:inputType="textPersonName"
+            android:inputType="number"
             android:layout_marginTop="100dp"
             android:background="@drawable/white_stroke"/>
 
@@ -191,4 +191,13 @@
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
+
+    <ProgressBar
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:id="@+id/progress"
+        android:visibility="gone"
+        />
+
 </RelativeLayout>

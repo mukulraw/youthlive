@@ -3,6 +3,7 @@ import android.Manifest;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -17,6 +18,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 import com.android.volley.AuthFailureError;
@@ -39,14 +41,23 @@ import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
 import com.youthlive.youthlive.Activitys.UserInformation;
 import com.youthlive.youthlive.DBHandler.SessionManager;
+import com.youthlive.youthlive.INTERFACE.AllAPIs;
 import com.youthlive.youthlive.Response.FacebookResponse;
 import com.youthlive.youthlive.Response.TwiterResponse;
+import com.youthlive.youthlive.loginResponsePOJO.loginResponseBean;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+import retrofit2.converter.scalars.ScalarsConverterFactory;
 
 import static com.youthlive.youthlive.R.id.Signup;
 
@@ -62,6 +73,8 @@ public class Register extends AppCompatActivity {
     public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
     public static  final  int MY_PERMISSIONS_REQUEST_READ_PHONE_STATE=12;
     RelativeLayout relative;
+
+    ProgressBar progress;
 
     private static final String TWITTER_KEY = "LBbbEwhJEotJqr3hfXlRHGtUk";
     private static final String TWITTER_SECRET = "RQL5V4FKdtqMLdWs6DkldiCoM7bkN4szL5s8oZKEHXXmHARWNR";
@@ -92,13 +105,101 @@ public class Register extends AppCompatActivity {
         relative=findViewById(R.id.relative);
         Phone_no = findViewById(R.id.phone_no);
         signup_button = findViewById(Signup);
+
+        progress = (ProgressBar)findViewById(R.id.progress);
+
         signup_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                usersign();
+                //usersign();
+                signUp();
             }
         });
     }
+
+
+
+    public void signUp()
+    {
+
+        String code = counrt_code.getText().toString();
+        String phone = Phone_no.getText().toString();
+
+        if (code.length() > 0)
+        {
+
+            if (phone.length() > 0)
+            {
+
+                progress.setVisibility(View.VISIBLE);
+
+                final bean b = (bean) getApplicationContext();
+
+                final Retrofit retrofit = new Retrofit.Builder()
+                        .baseUrl(b.BASE_URL)
+                        .addConverterFactory(ScalarsConverterFactory.create())
+                        .addConverterFactory(GsonConverterFactory.create())
+                        .build();
+
+                final AllAPIs cr = retrofit.create(AllAPIs.class);
+
+
+                Call<loginResponseBean> call = cr.signUp(phone , code);
+
+                call.enqueue(new Callback<loginResponseBean>() {
+                    @Override
+                    public void onResponse(Call<loginResponseBean> call, retrofit2.Response<loginResponseBean> response) {
+
+
+                        if (Objects.equals(response.body().getStatus(), "1"))
+                        {
+
+                            Intent intent = new Intent(Register.this , OTP.class);
+
+                            intent.putExtra("code" ,  response.body().getData().getVerificationCode());
+                            intent.putExtra("userId" ,  response.body().getData().getUserId());
+                            intent.putExtra("phone" ,  response.body().getData().getPhone());
+                            intent.putExtra("country" ,  response.body().getData().getCountryCode());
+
+
+                            startActivity(intent);
+
+                        }
+                        else
+                        {
+                            Toast.makeText(Register.this , response.body().getMessage() , Toast.LENGTH_SHORT).show();
+                        }
+
+
+                        Toast.makeText(Register.this , response.body().getMessage() , Toast.LENGTH_SHORT).show();
+
+                        progress.setVisibility(View.GONE);
+                    }
+
+                    @Override
+                    public void onFailure(Call<loginResponseBean> call, Throwable t) {
+                        progress.setVisibility(View.GONE);
+                        Log.d("register" , t.toString());
+                    }
+                });
+
+            }
+            else
+            {
+                Phone_no.setError("Invalid Phone");
+            }
+
+        }
+        else
+        {
+            counrt_code.setError("Invalid Country Code");
+        }
+
+
+    }
+
+
+
     private void usersign() {
         showpDialog();
         Counter_code = counrt_code.getText().toString().trim();

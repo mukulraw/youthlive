@@ -8,7 +8,7 @@ import android.app.Application;
 
 public class bean extends Application{
 
-    String BASE_URL = "http://nationproducts.in/";
+    public String BASE_URL = "http://nationproducts.in/";
 
     String userId = "";
     String userName = "";

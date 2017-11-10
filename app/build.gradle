@@ -57,10 +57,12 @@ dependencies {
     compile 'com.squareup.retrofit2:retrofit:2.0.0'
     compile 'com.squareup.retrofit:retrofit:1.9.0'
     compile 'com.squareup.retrofit2:converter-gson:2.0.0'
-    compile 'com.facebook.android:facebook-android-sdk:4.0.0'
+    compile 'com.facebook.android:facebook-android-sdk:[4,5)'
     compile 'com.squareup.retrofit2:converter-scalars:2.0.2'
     compile 'com.wowza.gocoder.sdk.android:com.wowza.gocoder.sdk:2.0@aar'
     compile 'com.nostra13.universalimageloader:universal-image-loader:1.9.5'
+
+    compile 'com.hannesdorfmann.smoothprogressbar:library:1.0.0'
 
     compile 'com.github.ybq:Android-SpinKit:1.1.0'
 

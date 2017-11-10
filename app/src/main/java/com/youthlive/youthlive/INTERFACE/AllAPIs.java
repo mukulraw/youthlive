@@ -1,11 +1,13 @@
 package com.youthlive.youthlive.INTERFACE;
 
 
+import com.youthlive.youthlive.addVideoPOJO.addVideoBean;
 import com.youthlive.youthlive.getLivePOJO.getLiveBean;
 import com.youthlive.youthlive.loginResponsePOJO.loginResponseBean;
 import com.youthlive.youthlive.singleVideoPOJO.singleVideoBean;
 import com.youthlive.youthlive.vlogListPOJO.vlogListBean;
 
+import okhttp3.MultipartBody;
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Headers;
@@ -18,10 +20,47 @@ public interface AllAPIs {
     @Multipart
     @POST("youthlive/api/sign_up.php")
     Call<loginResponseBean> signUp(
-            @Part("name") String name,
-            @Part("email") String email,
-            @Part("password") String password,
-            @Part("phone") String phone
+            @Part("phone") String phone,
+            @Part("countryCode") String code
+    );
+
+    @Multipart
+    @POST("youthlive/api/socialsign_up.php")
+    Call<loginResponseBean> socialSignIn(
+            @Part("pid") String pid,
+            @Part("email") String email
+    );
+
+    @Multipart
+    @POST("youthlive/api/resend_code.php")
+    Call<loginResponseBean> resend(
+            @Part("phone") String phone,
+            @Part("countryCode") String code
+    );
+
+    @Multipart
+    @POST("youthlive/api/update_user_info.php")
+    Call<loginResponseBean> addUserData(
+            @Part MultipartBody.Part file,
+            @Part("userName") String userName,
+            @Part("gender") String gender,
+            @Part("birthday") String birthday,
+            @Part("bio") String bio,
+            @Part("userId") String userId
+    );
+
+    @Multipart
+    @POST("youthlive/api/varify_code.php")
+    Call<loginResponseBean> verify(
+            @Part("userId") String userId,
+            @Part("code") String code
+    );
+
+    @Multipart
+    @POST("youthlive/api/create_password.php")
+    Call<loginResponseBean> createPassword(
+            @Part("userId") String userId,
+            @Part("password") String password
     );
 
     @Multipart
@@ -40,13 +79,13 @@ public interface AllAPIs {
     Call<getLiveBean> getLiveList();
 
     @Multipart
-    @POST("youthlive/api/get_video.php")
+    @POST("youthlive/api/all_video.php")
     Call<vlogListBean> getVlogList(
             @Part("userId") String userId
     );
 
     @Multipart
-    @POST("youthlive/api/get_single_video.php")
+    @POST("youthlive/api/video_likes.php")
     Call<singleVideoBean> getsingleVideo(
             @Part("userId") String userId,
             @Part("videoId") String videoId
@@ -65,6 +104,16 @@ public interface AllAPIs {
             @Part("userId") String userId,
             @Part("videoId") String videoId,
             @Part("comment") String comment
+    );
+
+
+    @Multipart
+    @POST("youthlive/api/add_video.php")
+    Call<addVideoBean> addVideo(
+            @Part("userId") String userId,
+            @Part("caption") String caption,
+            @Part("tag") String tag,
+            @Part MultipartBody.Part file
     );
 
 }

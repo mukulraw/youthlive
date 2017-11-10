@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.android.volley.AuthFailureError;
@@ -19,19 +20,31 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.youthlive.youthlive.INTERFACE.AllAPIs;
 import com.youthlive.youthlive.OTP;
 import com.youthlive.youthlive.R;
+import com.youthlive.youthlive.bean;
+import com.youthlive.youthlive.loginResponsePOJO.loginResponseBean;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+import retrofit2.converter.scalars.ScalarsConverterFactory;
 
 public class CreatePassword extends AppCompatActivity {
     Button btncreate;
     EditText userid,password;
     String userid1,Pass="",User,str;
+
+    ProgressBar progress;
 
     String CREATEapi="http://nationproducts.in/youthlive/api/create_password.php";
     @Override
@@ -47,18 +60,95 @@ public class CreatePassword extends AppCompatActivity {
         SharedPreferences.Editor editor = pass.edit();
         editor.putString("password",Pass);
         editor.commit();
+
+        progress = (ProgressBar)findViewById(R.id.progress);
+
         btncreate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Pass=password.getText().toString().trim();
-                User=userid.getText().toString().trim();
-                if(Pass.equals("")){  Toast.makeText(CreatePassword.this, "enter password", Toast.LENGTH_SHORT).show();}
-                else if(User.equals("")){  Toast.makeText(CreatePassword.this, "enter Userid", Toast.LENGTH_SHORT).show();}
-                else{
-                    createpassword();}
+
+                create();
+
             }
         });
     }
+
+
+
+    public void create()
+    {
+
+        String pass = userid.getText().toString();
+        String ret = password.getText().toString();
+
+        if (pass.length() > 0)
+        {
+
+            if (Objects.equals(ret, pass))
+            {
+
+
+                progress.setVisibility(View.VISIBLE);
+
+                bean b = (bean) getApplicationContext();
+
+                final Retrofit retrofit = new Retrofit.Builder()
+                        .baseUrl(b.BASE_URL)
+                        .addConverterFactory(ScalarsConverterFactory.create())
+                        .addConverterFactory(GsonConverterFactory.create())
+                        .build();
+
+                final AllAPIs cr = retrofit.create(AllAPIs.class);
+
+
+                Call<loginResponseBean> call = cr.createPassword(getIntent().getStringExtra("userId") , pass);
+
+                call.enqueue(new Callback<loginResponseBean>() {
+                    @Override
+                    public void onResponse(Call<loginResponseBean> call, retrofit2.Response<loginResponseBean> response) {
+
+
+                        if (Objects.equals(response.body().getStatus(), "1"))
+                        {
+
+                            Toast.makeText(CreatePassword.this , "Password created, Please update your Info" , Toast.LENGTH_SHORT).show();
+                            Intent intent = new Intent(CreatePassword.this, UserInformation.class);
+                            intent.putExtra("userId" , getIntent().getStringExtra("userId"));
+                            startActivity(intent);
+                            finish();
+
+                        }
+                        else
+                        {
+                            Toast.makeText(CreatePassword.this , response.body().getMessage() , Toast.LENGTH_SHORT).show();
+                        }
+
+
+                        progress.setVisibility(View.GONE);
+                    }
+
+                    @Override
+                    public void onFailure(Call<loginResponseBean> call, Throwable t) {
+                        progress.setVisibility(View.GONE);
+                    }
+                });
+
+
+            }
+            else
+            {
+                password.setError("Password did not match");
+            }
+
+        }
+        else
+        {
+            userid.setError("Invalid Password");
+        }
+
+    }
+
+
     public void createpassword()
     {
         StringRequest stringRequest = new StringRequest(Request.Method.POST, CREATEapi, new Response.Listener<String>() {

@@ -36,7 +36,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:id="@+id/uploadpic"
-            android:src="@drawable/camera" />/>
+            android:src="@drawable/camera" />
+
+
     </RelativeLayout>
 
     <LinearLayout
@@ -136,7 +138,6 @@
             android:drawableStart="@drawable/user"
             android:gravity="center_vertical"
             android:hint="BIO"
-            android:inputType="textPassword"
             android:padding="10dp"
             android:paddingStart="15sp"
             android:textColor="#FFFFFF"
@@ -153,4 +154,13 @@
             android:text="DONE"
             android:textColor="#fff" />
     </LinearLayout>
+
+    <ProgressBar
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:id="@+id/progress"
+        android:visibility="gone"
+        />
+
 </RelativeLayout>

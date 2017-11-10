@@ -32,11 +32,16 @@ import com.facebook.FacebookException;
 import com.facebook.FacebookSdk;
 import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
+import com.facebook.appevents.AppEventsLogger;
 import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
+import com.youthlive.youthlive.Activitys.CreatePassword;
+import com.youthlive.youthlive.Activitys.UserInformation;
 import com.youthlive.youthlive.DBHandler.SessionManager;
+import com.youthlive.youthlive.INTERFACE.AllAPIs;
+import com.youthlive.youthlive.loginResponsePOJO.loginResponseBean;
 
 import org.json.JSONObject;
 
@@ -49,7 +54,15 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+import retrofit2.converter.scalars.ScalarsConverterFactory;
+
 import static android.app.PendingIntent.getActivity;
+import static com.youthlive.youthlive.Signin.MyPREFERENCES;
 import static java.security.AccessController.getContext;
 
 public class Login extends AppCompatActivity {
@@ -61,6 +74,7 @@ public class Login extends AppCompatActivity {
     private ProgressDialog pDialog;
     String msg, loginid;
     SessionManager session;
+    ProgressBar progress;
 
     String[] PERMISSIONS = {
             Manifest.permission.SEND_SMS,
@@ -81,6 +95,7 @@ public class Login extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         FacebookSdk.sdkInitialize(getApplicationContext());
+        AppEventsLogger.activateApp(this);
         mCallbackManager = CallbackManager.Factory.create();
         // FacebookSdk.addLoggingBehavior(LoggingBehavior.REQUESTS);
         LoginManager.getInstance().registerCallback(mCallbackManager,
@@ -94,7 +109,6 @@ public class Login extends AppCompatActivity {
                                     @Override
                                     public void onCompleted(JSONObject object, GraphResponse response) {
                                         Log.v("LoginActivity", response.toString());
-                                        Log.d("LoginActivity", response.toString());
                                         Log.d("LoginJSONActivity", object.toString());
                                         try {
                                             JSONObject json = response.getJSONObject();
@@ -102,10 +116,74 @@ public class Login extends AppCompatActivity {
                                             final String email = json.getString("email");
                                             String id = json.getString("id");
                                             Log.d("FACEBOOKNAME", name + " Email > " + email);
-                                            Log.d("FACEBOOKNAME", name + " Email > " + email);
+                                            Log.d("FACEBOOKNAME", name + " Email > " + id);
                                             //   String profilePicUrl = json.getJSONObject("picture").getJSONObject("data").getString("url");
                                             String image = "https://graph.facebook.com/" + id + "/picture?type=large";
-                                            new FacebookloginAsyncTask().execute(email);
+
+
+
+                                            progress.setVisibility(View.VISIBLE);
+
+                                            final bean b = (bean) getApplicationContext();
+
+                                            final Retrofit retrofit = new Retrofit.Builder()
+                                                    .baseUrl(b.BASE_URL)
+                                                    .addConverterFactory(ScalarsConverterFactory.create())
+                                                    .addConverterFactory(GsonConverterFactory.create())
+                                                    .build();
+
+                                            final AllAPIs cr = retrofit.create(AllAPIs.class);
+
+
+                                            Call<loginResponseBean> call = cr.socialSignIn(id , email);
+
+                                            call.enqueue(new Callback<loginResponseBean>() {
+                                                @Override
+                                                public void onResponse(Call<loginResponseBean> call, Response<loginResponseBean> response) {
+
+                                                    if (response.body().getData().getUserName().length() > 0)
+                                                    {
+
+                                                        Toast.makeText(Login.this , response.body().getMessage() , Toast.LENGTH_SHORT).show();
+                                                        Intent intent = new Intent(Login.this , MainActivity.class);
+                                                        startActivity(intent);
+
+                                                        SharedPreferences sharedpreferences = Login.this.getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
+                                                        SharedPreferences.Editor editor = sharedpreferences.edit();
+                                                        editor.putString("userid", response.body().getData().getUserId());
+                                                        editor.commit();
+
+                                                    }
+                                                    else
+                                                    {
+
+                                                        Toast.makeText(Login.this , "Please update your info" , Toast.LENGTH_SHORT).show();
+                                                        Intent intent = new Intent(Login.this, UserInformation.class);
+                                                        intent.putExtra("userId" , getIntent().getStringExtra("userId"));
+                                                        startActivity(intent);
+                                                        SharedPreferences sharedpreferences = Login.this.getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
+                                                        SharedPreferences.Editor editor = sharedpreferences.edit();
+                                                        editor.putString("userid", response.body().getData().getUserId());
+                                                        editor.commit();
+                                                        finish();
+
+                                                    }
+
+
+                                                    progress.setVisibility(View.GONE);
+
+
+                                                }
+
+                                                @Override
+                                                public void onFailure(Call<loginResponseBean> call, Throwable t) {
+                                                    progress.setVisibility(View.GONE);
+                                                }
+                                            });
+
+
+
+                                            //new FacebookloginAsyncTask().execute(email);
                                         } catch (Exception e) {
 
                                             e.printStackTrace();
@@ -131,6 +209,24 @@ public class Login extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+
+
+/*
+        try {
+            PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), PackageManager.GET_SIGNATURES);
+            for (Signature signature : info.signatures) {
+                MessageDigest md = MessageDigest.getInstance("SHA");
+                md.update(signature.toByteArray());
+                String hashKey = new String(Base64.encode(md.digest(), 0));
+                Log.i("asdasd", "printHashKey() Hash Key: " + hashKey);
+            }
+        } catch (NoSuchAlgorithmException e) {
+            Log.e("asdasd", "printHashKey()", e);
+        } catch (Exception e) {
+            Log.e("Asdasd", "printHashKey()", e);
+        }
+
+*/
 
         ImageLoader.getInstance().init(ImageLoaderConfiguration.createDefault(Login.this));
 
@@ -169,6 +265,8 @@ public class Login extends AppCompatActivity {
 
         create = (Button) findViewById(R.id.create);
         login = (Button) findViewById(R.id.log_first);
+
+        progress = (ProgressBar)findViewById(R.id.progress);
 
         create.setOnClickListener(new View.OnClickListener() {
             @Override
