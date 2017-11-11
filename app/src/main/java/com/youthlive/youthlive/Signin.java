@@ -16,6 +16,7 @@ import android.view.View;
 import android.view.Window;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
@@ -27,6 +28,21 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.facebook.CallbackManager;
+import com.facebook.FacebookCallback;
+import com.facebook.FacebookException;
+import com.facebook.FacebookSdk;
+import com.facebook.GraphRequest;
+import com.facebook.GraphResponse;
+import com.facebook.appevents.AppEventsLogger;
+import com.facebook.login.LoginManager;
+import com.facebook.login.LoginResult;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.tasks.Task;
 import com.youthlive.youthlive.Activitys.UserInformation;
 import com.youthlive.youthlive.DBHandler.SessionManager;
 import com.youthlive.youthlive.INTERFACE.AllAPIs;
@@ -35,6 +51,7 @@ import com.youthlive.youthlive.loginResponsePOJO.loginResponseBean;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -49,6 +66,7 @@ public class Signin extends AppCompatActivity {
     Button Login;
     SessionManager session;
     private ProgressDialog pDialog;
+    CallbackManager mCallbackManager;
     public static final String MyPREFERENCES = "userSession";
     private static final String BASEELOGIN_URL = "http://nationproducts.in/youthlive/api/mobile_signin.php";
     private static final String KEY_NUM = "number";
@@ -60,10 +78,128 @@ public class Signin extends AppCompatActivity {
     LinearLayout cancel_layout, cancel_ok;
     ProgressBar progress;
 
+    ImageView facebook_login, googleLogin , twitter_login;
 
+    private int RC_SIGN_IN = 22;
+    GoogleSignInClient mGoogleSignInClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        FacebookSdk.sdkInitialize(getApplicationContext());
+        AppEventsLogger.activateApp(this);
+        mCallbackManager = CallbackManager.Factory.create();
+        // FacebookSdk.addLoggingBehavior(LoggingBehavior.REQUESTS);
+        LoginManager.getInstance().registerCallback(mCallbackManager,
+                new FacebookCallback<LoginResult>() {
+                    @Override
+                    public void onSuccess(LoginResult loginResult) {
+                        Log.d("Success", "Login");
+                        GraphRequest request = GraphRequest.newMeRequest(
+                                loginResult.getAccessToken(),
+                                new GraphRequest.GraphJSONObjectCallback() {
+                                    @Override
+                                    public void onCompleted(JSONObject object, GraphResponse response) {
+                                        Log.v("LoginActivity", response.toString());
+                                        Log.d("LoginJSONActivity", object.toString());
+                                        try {
+                                            JSONObject json = response.getJSONObject();
+                                            final String name = json.getString("name");
+                                            final String email = json.getString("email");
+                                            String id = json.getString("id");
+                                            Log.d("FACEBOOKNAME", name + " Email > " + email);
+                                            Log.d("FACEBOOKNAME", name + " Email > " + id);
+                                            //   String profilePicUrl = json.getJSONObject("picture").getJSONObject("data").getString("url");
+                                            String image = "https://graph.facebook.com/" + id + "/picture?type=large";
+
+
+
+                                            progress.setVisibility(View.VISIBLE);
+
+                                            final bean b = (bean) getApplicationContext();
+
+                                            final Retrofit retrofit = new Retrofit.Builder()
+                                                    .baseUrl(b.BASE_URL)
+                                                    .addConverterFactory(ScalarsConverterFactory.create())
+                                                    .addConverterFactory(GsonConverterFactory.create())
+                                                    .build();
+
+                                            final AllAPIs cr = retrofit.create(AllAPIs.class);
+
+
+                                            Call<loginResponseBean> call = cr.socialSignIn(id , email);
+
+                                            call.enqueue(new Callback<loginResponseBean>() {
+                                                @Override
+                                                public void onResponse(Call<loginResponseBean> call, retrofit2.Response<loginResponseBean> response) {
+
+                                                    if (response.body().getData().getUserName().length() > 0)
+                                                    {
+
+                                                        Toast.makeText(Signin.this , response.body().getMessage() , Toast.LENGTH_SHORT).show();
+                                                        Intent intent = new Intent(Signin.this , MainActivity.class);
+                                                        startActivity(intent);
+
+                                                        SharedPreferences sharedpreferences = Signin.this.getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
+                                                        SharedPreferences.Editor editor = sharedpreferences.edit();
+                                                        editor.putString("userid", response.body().getData().getUserId());
+                                                        editor.commit();
+
+                                                    }
+                                                    else
+                                                    {
+
+                                                        Toast.makeText(Signin.this , "Please update your info" , Toast.LENGTH_SHORT).show();
+                                                        Intent intent = new Intent(Signin.this, UserInformation.class);
+                                                        intent.putExtra("userId" , response.body().getData().getUserId());
+                                                        startActivity(intent);
+                                                        SharedPreferences sharedpreferences = Signin.this.getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
+                                                        SharedPreferences.Editor editor = sharedpreferences.edit();
+                                                        editor.putString("userid", response.body().getData().getUserId());
+                                                        editor.commit();
+                                                        finish();
+
+                                                    }
+
+
+                                                    progress.setVisibility(View.GONE);
+
+
+                                                }
+
+                                                @Override
+                                                public void onFailure(Call<loginResponseBean> call, Throwable t) {
+                                                    progress.setVisibility(View.GONE);
+                                                }
+                                            });
+
+
+
+                                            //new FacebookloginAsyncTask().execute(email);
+                                        } catch (Exception e) {
+
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                });
+                        Bundle parameters = new Bundle();
+                        parameters.putString("fields", "id,name,email,gender,birthday,picture.type(large)");
+                        request.setParameters(parameters);
+                        request.executeAsync();
+                    }
+
+                    @Override
+                    public void onCancel() {
+                        Toast.makeText(Signin.this, "Login Cancel", Toast.LENGTH_LONG).show();
+                    }
+
+                    @Override
+                    public void onError(FacebookException exception) {
+                        Toast.makeText(Signin.this, exception.getMessage(), Toast.LENGTH_LONG).show();
+                    }
+                });
+
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_signin);
         builder = new AlertDialog.Builder(Signin.this);
@@ -79,6 +215,38 @@ public class Signin extends AppCompatActivity {
         pass1 = settings.getString("password", "");
 
         progress = (ProgressBar) findViewById(R.id.progress);
+
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail()
+                .build();
+
+        mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
+
+
+        googleLogin = findViewById(R.id.ggleLogin);
+        googleLogin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                signIn();
+
+            }
+        });
+        facebook_login = (ImageView) findViewById(R.id.facebook_login);
+        facebook_login.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                LoginManager.getInstance().logInWithReadPermissions(Signin.this, Arrays.asList("public_profile", "email", "user_birthday"));
+            }
+        });
+
+        twitter_login = (ImageView)findViewById(R.id.twitter);
+        twitter_login.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+            }
+        });
+
 
         login.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -374,4 +542,101 @@ public class Signin extends AppCompatActivity {
         if (pDialog.isShowing())
             pDialog.dismiss();
     }
+
+    private void signIn() {
+        Intent signInIntent = mGoogleSignInClient.getSignInIntent();
+        startActivityForResult(signInIntent, RC_SIGN_IN);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        mCallbackManager.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == RC_SIGN_IN) {
+            // The Task returned from this call is always completed, no need to attach
+            // a listener.
+            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+            handleSignInResult(task);
+        }
+
+    }
+
+    private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
+        try {
+            GoogleSignInAccount account = completedTask.getResult(ApiException.class);
+
+            // Signed in successfully, show authenticated UI.
+
+
+            progress.setVisibility(View.VISIBLE);
+
+            final bean b = (bean) getApplicationContext();
+
+            final Retrofit retrofit = new Retrofit.Builder()
+                    .baseUrl(b.BASE_URL)
+                    .addConverterFactory(ScalarsConverterFactory.create())
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build();
+
+            final AllAPIs cr = retrofit.create(AllAPIs.class);
+
+
+            Call<loginResponseBean> call = cr.socialSignIn(account.getId() , account.getEmail());
+
+            call.enqueue(new Callback<loginResponseBean>() {
+                @Override
+                public void onResponse(Call<loginResponseBean> call, retrofit2.Response<loginResponseBean> response) {
+
+                    if (response.body().getData().getUserName().length() > 0)
+                    {
+
+                        Toast.makeText(Signin.this , response.body().getMessage() , Toast.LENGTH_SHORT).show();
+                        Intent intent = new Intent(Signin.this , MainActivity.class);
+                        startActivity(intent);
+
+                        SharedPreferences sharedpreferences = Signin.this.getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
+                        SharedPreferences.Editor editor = sharedpreferences.edit();
+                        editor.putString("userid", response.body().getData().getUserId());
+                        editor.commit();
+
+                    }
+                    else
+                    {
+
+                        Toast.makeText(Signin.this , "Please update your info" , Toast.LENGTH_SHORT).show();
+                        Intent intent = new Intent(Signin.this, UserInformation.class);
+                        intent.putExtra("userId" , response.body().getData().getUserId());
+                        startActivity(intent);
+                        SharedPreferences sharedpreferences = Signin.this.getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
+                        SharedPreferences.Editor editor = sharedpreferences.edit();
+                        editor.putString("userid", response.body().getData().getUserId());
+                        editor.commit();
+                        finish();
+
+                    }
+
+
+                    progress.setVisibility(View.GONE);
+
+
+                }
+
+                @Override
+                public void onFailure(Call<loginResponseBean> call, Throwable t) {
+                    progress.setVisibility(View.GONE);
+                }
+            });
+
+
+
+        } catch (ApiException e) {
+            // The ApiException status code indicates the detailed failure reason.
+            // Please refer to the GoogleSignInStatusCodes class reference for more information.
+            Log.w("asdas", "signInResult:failed code=" + e.getStatusCode());
+
+        }
+    }
+
 }

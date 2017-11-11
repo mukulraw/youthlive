@@ -134,6 +134,7 @@
                     android:layout_height="60dp"
                     android:src="@drawable/facebook"
                     android:paddingStart="10dp"
+                    android:id="@+id/facebook_login"
                     android:paddingEnd="10dp"
                     android:layout_gravity="center"
                     android:background="@drawable/white_circle"/>
@@ -164,6 +165,7 @@
                     android:layout_width="60dp"
                     android:layout_height="60dp"
                     android:src="@drawable/google"
+                    android:id="@+id/ggleLogin"
                     android:paddingStart="10dp"
                     android:paddingEnd="10dp"
                     android:layout_gravity="center"
@@ -185,6 +187,7 @@
                     android:layout_height="60dp"
                     android:src="@drawable/twitter"
                     android:paddingStart="10dp"
+                    android:id="@+id/twitter"
                     android:paddingEnd="10dp"
                     android:layout_gravity="center"
                     android:background="@drawable/white_circle"/>

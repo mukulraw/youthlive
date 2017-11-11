@@ -18,6 +18,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
@@ -37,8 +38,15 @@ import com.facebook.GraphRequest;
 import com.facebook.GraphRequestAsyncTask;
 import com.facebook.GraphResponse;
 import com.facebook.appevents.AppEventsLogger;
+import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.tasks.Task;
 import com.youthlive.youthlive.Activitys.UserInformation;
 import com.youthlive.youthlive.DBHandler.SessionManager;
 import com.youthlive.youthlive.INTERFACE.AllAPIs;
@@ -48,6 +56,8 @@ import com.youthlive.youthlive.loginResponsePOJO.loginResponseBean;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -60,6 +70,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 import retrofit2.converter.scalars.ScalarsConverterFactory;
 
 import static com.youthlive.youthlive.R.id.Signup;
+import static com.youthlive.youthlive.Signin.MyPREFERENCES;
 
 public class Register extends AppCompatActivity {
     EditText counrt_code, Phone_no;
@@ -74,7 +85,11 @@ public class Register extends AppCompatActivity {
     public static  final  int MY_PERMISSIONS_REQUEST_READ_PHONE_STATE=12;
     RelativeLayout relative;
 
+    ImageView facebook_login, googleLogin , twitter_login;
+
     ProgressBar progress;
+    private int RC_SIGN_IN = 22;
+    GoogleSignInClient mGoogleSignInClient;
 
     private static final String TWITTER_KEY = "LBbbEwhJEotJqr3hfXlRHGtUk";
     private static final String TWITTER_SECRET = "RQL5V4FKdtqMLdWs6DkldiCoM7bkN4szL5s8oZKEHXXmHARWNR";
@@ -84,6 +99,7 @@ public class Register extends AppCompatActivity {
     private static final int MY_PERMISSIONS_REQUEST_SEND_SMS =0 ;
     private static final String KEY_COUNTRY = "Contery";
     private static final String KEY_PASS = "passs";
+    CallbackManager mCallbackManager;
     private static final String TAG = "ERROR";
     BroadcastReceiver smsSentReceiver, smsDeliveredReceiver;
     private static final String OTP = "otp";
@@ -93,6 +109,121 @@ public class Register extends AppCompatActivity {
     String jsonResponse;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        FacebookSdk.sdkInitialize(getApplicationContext());
+        AppEventsLogger.activateApp(this);
+        mCallbackManager = CallbackManager.Factory.create();
+        // FacebookSdk.addLoggingBehavior(LoggingBehavior.REQUESTS);
+        LoginManager.getInstance().registerCallback(mCallbackManager,
+                new FacebookCallback<LoginResult>() {
+                    @Override
+                    public void onSuccess(LoginResult loginResult) {
+                        Log.d("Success", "Login");
+                        GraphRequest request = GraphRequest.newMeRequest(
+                                loginResult.getAccessToken(),
+                                new GraphRequest.GraphJSONObjectCallback() {
+                                    @Override
+                                    public void onCompleted(JSONObject object, GraphResponse response) {
+                                        Log.v("LoginActivity", response.toString());
+                                        Log.d("LoginJSONActivity", object.toString());
+                                        try {
+                                            JSONObject json = response.getJSONObject();
+                                            final String name = json.getString("name");
+                                            final String email = json.getString("email");
+                                            String id = json.getString("id");
+                                            Log.d("FACEBOOKNAME", name + " Email > " + email);
+                                            Log.d("FACEBOOKNAME", name + " Email > " + id);
+                                            //   String profilePicUrl = json.getJSONObject("picture").getJSONObject("data").getString("url");
+                                            String image = "https://graph.facebook.com/" + id + "/picture?type=large";
+
+
+
+                                            progress.setVisibility(View.VISIBLE);
+
+                                            final bean b = (bean) getApplicationContext();
+
+                                            final Retrofit retrofit = new Retrofit.Builder()
+                                                    .baseUrl(b.BASE_URL)
+                                                    .addConverterFactory(ScalarsConverterFactory.create())
+                                                    .addConverterFactory(GsonConverterFactory.create())
+                                                    .build();
+
+                                            final AllAPIs cr = retrofit.create(AllAPIs.class);
+
+
+                                            Call<loginResponseBean> call = cr.socialSignIn(id , email);
+
+                                            call.enqueue(new Callback<loginResponseBean>() {
+                                                @Override
+                                                public void onResponse(Call<loginResponseBean> call, retrofit2.Response<loginResponseBean> response) {
+
+                                                    if (response.body().getData().getUserName().length() > 0)
+                                                    {
+
+                                                        Toast.makeText(Register.this , response.body().getMessage() , Toast.LENGTH_SHORT).show();
+                                                        Intent intent = new Intent(Register.this , MainActivity.class);
+                                                        startActivity(intent);
+
+                                                        SharedPreferences sharedpreferences = Register.this.getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
+                                                        SharedPreferences.Editor editor = sharedpreferences.edit();
+                                                        editor.putString("userid", response.body().getData().getUserId());
+                                                        editor.commit();
+
+                                                    }
+                                                    else
+                                                    {
+
+                                                        Toast.makeText(Register.this , "Please update your info" , Toast.LENGTH_SHORT).show();
+                                                        Intent intent = new Intent(Register.this, UserInformation.class);
+                                                        intent.putExtra("userId" , response.body().getData().getUserId());
+                                                        startActivity(intent);
+                                                        SharedPreferences sharedpreferences = Register.this.getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
+                                                        SharedPreferences.Editor editor = sharedpreferences.edit();
+                                                        editor.putString("userid", response.body().getData().getUserId());
+                                                        editor.commit();
+                                                        finish();
+
+                                                    }
+
+
+                                                    progress.setVisibility(View.GONE);
+
+
+                                                }
+
+                                                @Override
+                                                public void onFailure(Call<loginResponseBean> call, Throwable t) {
+                                                    progress.setVisibility(View.GONE);
+                                                }
+                                            });
+
+
+
+                                            //new FacebookloginAsyncTask().execute(email);
+                                        } catch (Exception e) {
+
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                });
+                        Bundle parameters = new Bundle();
+                        parameters.putString("fields", "id,name,email,gender,birthday,picture.type(large)");
+                        request.setParameters(parameters);
+                        request.executeAsync();
+                    }
+
+                    @Override
+                    public void onCancel() {
+                        Toast.makeText(Register.this, "Login Cancel", Toast.LENGTH_LONG).show();
+                    }
+
+                    @Override
+                    public void onError(FacebookException exception) {
+                        Toast.makeText(Register.this, exception.getMessage(), Toast.LENGTH_LONG).show();
+                    }
+                });
+
+
         super.onCreate(savedInstanceState);
         FacebookSdk.sdkInitialize(this);
         setContentView(R.layout.activity_register);
@@ -105,6 +236,38 @@ public class Register extends AppCompatActivity {
         relative=findViewById(R.id.relative);
         Phone_no = findViewById(R.id.phone_no);
         signup_button = findViewById(Signup);
+
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail()
+                .build();
+
+        mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
+
+
+        googleLogin = findViewById(R.id.ggleLogin);
+        googleLogin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                signIn();
+
+            }
+        });
+        facebook_login = (ImageView) findViewById(R.id.facebook_login);
+        facebook_login.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                LoginManager.getInstance().logInWithReadPermissions(Register.this, Arrays.asList("public_profile", "email", "user_birthday"));
+            }
+        });
+
+        twitter_login = (ImageView)findViewById(R.id.twitter);
+        twitter_login.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+            }
+        });
+
 
         progress = (ProgressBar)findViewById(R.id.progress);
 
@@ -382,5 +545,103 @@ public class Register extends AppCompatActivity {
         }
     }
 
+    private void signIn() {
+        Intent signInIntent = mGoogleSignInClient.getSignInIntent();
+        startActivityForResult(signInIntent, RC_SIGN_IN);
+    }
+
+
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        mCallbackManager.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == RC_SIGN_IN) {
+            // The Task returned from this call is always completed, no need to attach
+            // a listener.
+            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+            handleSignInResult(task);
+        }
+
+    }
+
+
+    private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
+        try {
+            GoogleSignInAccount account = completedTask.getResult(ApiException.class);
+
+            // Signed in successfully, show authenticated UI.
+
+
+            progress.setVisibility(View.VISIBLE);
+
+            final bean b = (bean) getApplicationContext();
+
+            final Retrofit retrofit = new Retrofit.Builder()
+                    .baseUrl(b.BASE_URL)
+                    .addConverterFactory(ScalarsConverterFactory.create())
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build();
+
+            final AllAPIs cr = retrofit.create(AllAPIs.class);
+
+
+            Call<loginResponseBean> call = cr.socialSignIn(account.getId() , account.getEmail());
+
+            call.enqueue(new Callback<loginResponseBean>() {
+                @Override
+                public void onResponse(Call<loginResponseBean> call, retrofit2.Response<loginResponseBean> response) {
+
+                    if (response.body().getData().getUserName().length() > 0)
+                    {
+
+                        Toast.makeText(Register.this , response.body().getMessage() , Toast.LENGTH_SHORT).show();
+                        Intent intent = new Intent(Register.this , MainActivity.class);
+                        startActivity(intent);
+
+                        SharedPreferences sharedpreferences = Register.this.getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
+                        SharedPreferences.Editor editor = sharedpreferences.edit();
+                        editor.putString("userid", response.body().getData().getUserId());
+                        editor.commit();
+
+                    }
+                    else
+                    {
+
+                        Toast.makeText(Register.this , "Please update your info" , Toast.LENGTH_SHORT).show();
+                        Intent intent = new Intent(Register.this, UserInformation.class);
+                        intent.putExtra("userId" , response.body().getData().getUserId());
+                        startActivity(intent);
+                        SharedPreferences sharedpreferences = Register.this.getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
+                        SharedPreferences.Editor editor = sharedpreferences.edit();
+                        editor.putString("userid", response.body().getData().getUserId());
+                        editor.commit();
+                        finish();
+
+                    }
+
+
+                    progress.setVisibility(View.GONE);
+
+
+                }
+
+                @Override
+                public void onFailure(Call<loginResponseBean> call, Throwable t) {
+                    progress.setVisibility(View.GONE);
+                }
+            });
+
+
+
+        } catch (ApiException e) {
+            // The ApiException status code indicates the detailed failure reason.
+            // Please refer to the GoogleSignInStatusCodes class reference for more information.
+            Log.w("asdas", "signInResult:failed code=" + e.getStatusCode());
+
+        }
+    }
 
 }

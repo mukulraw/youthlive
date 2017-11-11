@@ -35,6 +35,16 @@ import com.facebook.GraphResponse;
 import com.facebook.appevents.AppEventsLogger;
 import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
+
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.tasks.Task;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
 import com.youthlive.youthlive.Activitys.CreatePassword;
@@ -69,7 +79,7 @@ public class Login extends AppCompatActivity {
 
     Button create, login;
     CallbackManager mCallbackManager;
-    ImageView facebook_login, googleLogin;
+    ImageView facebook_login, googleLogin , twitter_login;
     public static final String mypreference = "mypref";
     private ProgressDialog pDialog;
     String msg, loginid;
@@ -89,8 +99,10 @@ public class Login extends AppCompatActivity {
             Manifest.permission.CAMERA
     };
 
+    GoogleSignInClient mGoogleSignInClient;
 
     final private int REQUEST_CODE_ASK_PERMISSIONS = 123;
+    private int RC_SIGN_IN = 22;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -159,7 +171,7 @@ public class Login extends AppCompatActivity {
 
                                                         Toast.makeText(Login.this , "Please update your info" , Toast.LENGTH_SHORT).show();
                                                         Intent intent = new Intent(Login.this, UserInformation.class);
-                                                        intent.putExtra("userId" , getIntent().getStringExtra("userId"));
+                                                        intent.putExtra("userId" , response.body().getData().getUserId());
                                                         startActivity(intent);
                                                         SharedPreferences sharedpreferences = Login.this.getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
                                                         SharedPreferences.Editor editor = sharedpreferences.edit();
@@ -228,6 +240,17 @@ public class Login extends AppCompatActivity {
 
 */
 
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail()
+                .build();
+
+        mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
+
+
+        /*GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+        updateUI(account);*/
+
+
         ImageLoader.getInstance().init(ImageLoaderConfiguration.createDefault(Login.this));
 
 
@@ -250,8 +273,7 @@ public class Login extends AppCompatActivity {
         googleLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent xyz = new Intent(getApplicationContext(), Live.class);
-                startActivity(xyz);
+                signIn();
 
             }
         });
@@ -260,6 +282,14 @@ public class Login extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 LoginManager.getInstance().logInWithReadPermissions(Login.this, Arrays.asList("public_profile", "email", "user_birthday"));
+            }
+        });
+
+        twitter_login = (ImageView)findViewById(R.id.twitter);
+        twitter_login.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
             }
         });
 
@@ -302,6 +332,12 @@ public class Login extends AppCompatActivity {
             Log.d("KeyHash:-", Base64.encodeToString(nd.digest(), Base64.DEFAULT));
         }
     }
+
+    private void signIn() {
+        Intent signInIntent = mGoogleSignInClient.getSignInIntent();
+        startActivityForResult(signInIntent, RC_SIGN_IN);
+    }
+
 
     private class FacebookloginAsyncTask extends AsyncTask<String, Void, Void> {    //////today list asyntask
         protected void onPreExecute() {
@@ -464,5 +500,90 @@ public class Login extends AppCompatActivity {
 
         mCallbackManager.onActivityResult(requestCode, resultCode, data);
 
+        if (requestCode == RC_SIGN_IN) {
+            // The Task returned from this call is always completed, no need to attach
+            // a listener.
+            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+            handleSignInResult(task);
+        }
+
     }
+
+
+    private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
+        try {
+            GoogleSignInAccount account = completedTask.getResult(ApiException.class);
+
+            // Signed in successfully, show authenticated UI.
+
+
+            progress.setVisibility(View.VISIBLE);
+
+            final bean b = (bean) getApplicationContext();
+
+            final Retrofit retrofit = new Retrofit.Builder()
+                    .baseUrl(b.BASE_URL)
+                    .addConverterFactory(ScalarsConverterFactory.create())
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build();
+
+            final AllAPIs cr = retrofit.create(AllAPIs.class);
+
+
+            Call<loginResponseBean> call = cr.socialSignIn(account.getId() , account.getEmail());
+
+            call.enqueue(new Callback<loginResponseBean>() {
+                @Override
+                public void onResponse(Call<loginResponseBean> call, Response<loginResponseBean> response) {
+
+                    if (response.body().getData().getUserName().length() > 0)
+                    {
+
+                        Toast.makeText(Login.this , response.body().getMessage() , Toast.LENGTH_SHORT).show();
+                        Intent intent = new Intent(Login.this , MainActivity.class);
+                        startActivity(intent);
+
+                        SharedPreferences sharedpreferences = Login.this.getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
+                        SharedPreferences.Editor editor = sharedpreferences.edit();
+                        editor.putString("userid", response.body().getData().getUserId());
+                        editor.commit();
+
+                    }
+                    else
+                    {
+
+                        Toast.makeText(Login.this , "Please update your info" , Toast.LENGTH_SHORT).show();
+                        Intent intent = new Intent(Login.this, UserInformation.class);
+                        intent.putExtra("userId" , response.body().getData().getUserId());
+                        startActivity(intent);
+                        SharedPreferences sharedpreferences = Login.this.getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
+                        SharedPreferences.Editor editor = sharedpreferences.edit();
+                        editor.putString("userid", response.body().getData().getUserId());
+                        editor.commit();
+                        finish();
+
+                    }
+
+
+                    progress.setVisibility(View.GONE);
+
+
+                }
+
+                @Override
+                public void onFailure(Call<loginResponseBean> call, Throwable t) {
+                    progress.setVisibility(View.GONE);
+                }
+            });
+
+
+
+        } catch (ApiException e) {
+            // The ApiException status code indicates the detailed failure reason.
+            // Please refer to the GoogleSignInStatusCodes class reference for more information.
+            Log.w("asdas", "signInResult:failed code=" + e.getStatusCode());
+
+        }
+    }
+
 }

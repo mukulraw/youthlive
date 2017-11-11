@@ -10,6 +10,7 @@ android {
         targetSdkVersion 26
         versionCode 1
         versionName "1.0"
+        multiDexEnabled true
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -63,8 +64,10 @@ dependencies {
     compile 'com.nostra13.universalimageloader:universal-image-loader:1.9.5'
 
     compile 'com.hannesdorfmann.smoothprogressbar:library:1.0.0'
+    compile 'com.google.android.gms:play-services:11.6.0'
 
     compile 'com.github.ybq:Android-SpinKit:1.1.0'
 
     testCompile 'junit:junit:4.12'
 }
+apply plugin: 'com.google.gms.google-services'
